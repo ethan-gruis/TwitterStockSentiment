@@ -7,6 +7,7 @@ import re
 import os
 from sys import platform
 from datetime import datetime
+import pysentiment2
 
 
 
@@ -40,6 +41,24 @@ def pullStockTweets(stock, since, until):
 
 
 gme = pullStockTweets("gMe", "2021-02-14", "2021-02-17")
+
+
+
+lm = ps.LM()
+sentence_token = lm.tokenize(gme['renderedContent'][0])
+sentence_token
+for i in range(0, len(gme)):
+    sentence_token = lm.tokenize(gme['renderedContent'][i])
+    score = lm.get_score(sentence_token)
+    gme.loc[i, 'Positive'] = (score['Positive'])
+    gme.loc[i, 'Negative'] = (score['Negative'])
+
+
+gme[['content', 'Positive','Negative']]
+
+gme['Positive'].mean()
+
+gme['Negative'].mean()
 
 # Creating finction to scrape stock ticker by name (done with snscrape)
 # Function needs to include windows, linux,or OSX
