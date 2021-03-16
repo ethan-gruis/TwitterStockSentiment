@@ -115,7 +115,22 @@ def StockTickerValue(stock):
 AAPL = StockTickerValue('AAPL')
 
 type(AAPL['timestamp'][0])
+AAPL['strDate'] = AAPL['timestamp']
 
+AAPL
+
+merged_aapl = aapl.merge(AAPL[['strDate', 'open', 'adjusted_close']], how = 'left', on = 'strDate')
+
+
+merged_aapl
+
+for i in range(1, len(merged_aapl)):
+    if(pd.isnull(merged_aapl.loc[i, 'adjusted_close'])):
+        merged_aapl.loc[i, 'adjusted_close'] = merged_aapl.loc[i-1, 'adjusted_close']
+
+merged_aapl
+
+stock_value["strDate"] = str(stock_value['timestamp'])
 ov_stock = sentiment_pivot.merge(stock_value[['strDate','open', 'adjusted_close']], how = 'left', on = 'strDate')
 
 for i in range(1, len(ov_stock)):
