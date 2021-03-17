@@ -66,9 +66,9 @@ def pullStockTweets(stock, since = date.today() - timedelta(days = 8), until = d
     sentiment_pivot['ticker'] = stock_tweet
     stock_df= getStockTicker(stock)
     stock_merged = tickerSentMerge(sentiment_pivot, stock_df)
-    if(stock_merged == 'ERROR: Majority Nulls in trading days, breaking function...'):
-        print(stock_merged)
-        return
+    # if(stock_merged == 'ERROR: Majority Nulls in trading days, breaking function...'):
+    #     print(stock_merged)
+    #     return
     print('done!')
     return(stock_merged)
         # do unix stuff
@@ -173,6 +173,6 @@ def handleErrors(stock_df, merged_ticker):
          return err
     else:
          for i in range(1, len(merged_ticker)):
-             if(pd.isnull(merged_ticker.loc[i, 'close'])):
-                 merged_ticker.loc[i, 'close'] = merged_ticker.loc[i-1, 'close']
+             if(pd.isnull(merged_ticker.loc[i, 'open'])):
+                 merged_ticker.loc[i, 'open'] = merged_ticker.loc[i-1, 'open']
     return(merged_ticker)
