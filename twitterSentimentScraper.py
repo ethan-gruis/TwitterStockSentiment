@@ -62,7 +62,8 @@ def pullStockTweets(stock, since = date.today() - timedelta(days = 8), until = d
         data = pd.read_json(unix_path, lines = True)
         print("Loaded stock tweet dataframe")
 
-    sentiment_pivot = getSentiment(data)
+    df_sent = getSentiment(data)
+    df_pivot = makePivot(df_sent)
     sentiment_pivot['ticker'] = stock_tweet
     stock_df= getStockTicker(stock)
     stock_merged = tickerSentMerge(sentiment_pivot, stock_df)
@@ -73,7 +74,7 @@ def pullStockTweets(stock, since = date.today() - timedelta(days = 8), until = d
     return(stock_merged)
         # do unix stuff
 
-def getSentiment(df):
+def getSentiment(df, verbose = False):
     """Creates sentiment values from dataframe of scraped tweets and aggregates by date into a pivot table
 
     Args:
@@ -87,12 +88,14 @@ def getSentiment(df):
     print('Fetching sentiment from stock tweets...')
     lm = ps.LM()
     for i in range(0, len(df)):
+        if verbose: # print rows every 500
+            if i % 1000 == 0:
+                print(str(i) + ' / ' + str(len(df)))
         sentence_token = lm.tokenize(df['renderedContent'][i])
         score = lm.get_score(sentence_token)
         df.loc[i, 'Positive'] = score['Positive']
         df.loc[i, 'Negative'] = score['Negative']
-    df_pivot = makePivot(df)
-    return(df_pivot)
+    return(df)
 
 def makePivot(df):
     """Pivoting the sentiment tweet values to aggregate overall day value and unique dates
