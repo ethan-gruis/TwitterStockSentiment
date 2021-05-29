@@ -1,4 +1,3 @@
-# !python --version
 # !pip install git+https://github.com/JustAnotherArchivist/snscrape.git
 #!pip3 install --upgrade git+https://github.com/JustAnotherArchivist/snscrape@master
 
@@ -9,8 +8,9 @@ from sys import platform
 from datetime import date, timedelta
 import pysentiment2 as ps
 from pandas._libs.tslibs.timestamps import Timestamp
-
-
+import snscrape
+import snscrape
+import json
 
 ## EXAMPLE CODE: snscrape
 
@@ -19,7 +19,7 @@ from pandas._libs.tslibs.timestamps import Timestamp
 # os.system("snscrape --jsonl --max-results {} twitter-search '$GME'> user-tweets.json".format(tweet_count))
 
 # mac:
-# os.system("snscrape --jsonl twitter-search '$GME since:2021-03-01 until:2021-03-02'> tweets.json")
+#os.system("snscrape --jsonl twitter-search '$GME since:2021-03-01 until:2021-03-02'> tweets.json")
 
 # windows:
 # os.system("snscrape --jsonl --max-results 500 --since 2020-02-01 twitter-search \"$GME until:2021-02-02\" > text-query-tweets.json")
@@ -39,7 +39,6 @@ def pullStockTweets(stock, since = date.today() - timedelta(days = 8), until = d
         DataFrame object with pivot table containing date range given, positive and negative sentiment, opening and closing stock values
 
     """
-
     stock = str(stock).upper()
     stock_tweet = "$" + str(stock)
     call = ""
@@ -47,32 +46,32 @@ def pullStockTweets(stock, since = date.today() - timedelta(days = 8), until = d
     print('Pulling stock data for ticker: ' + stock_tweet)
     print('WARNING: this may take some time dependent on dates provided. Default: 1 week.')
 
-
+    filename = str(stock) + str(since) + "-" + str(until) + ".json"
     if platform == "win32":
-        call = "snscrape --jsonl twitter-search \"" + str(stock_tweet) + " since:" + str(since) + " until:" + str(until) + "\"> function-tweets.json"
+        call = "snscrape --jsonl twitter-search \"" + str(stock_tweet) + " since:" + str(since) + " until:" + str(until) + "\"> " + filename
         # do windows stuff
         os.system(call)
-        win_path = os.getcwd() + '/function-tweets.json'
+        win_path = os.getcwd() + '/' + filename
         data = pd.read_json(win_path, lines = True)
         print("Loaded stock tweet dataframe.")
     else:
-        call = "snscrape --jsonl twitter-search '" + str(stock_tweet) + " since:" + str(since) + " until:" + str(until) + "'> function-tweets.json"
+        call = "snscrape --jsonl twitter-search '" + str(stock_tweet) + " since:" + str(since) + " until:" + str(until) + "'> " + filename
         os.system(call)
-        unix_path = os.getcwd() + '/function-tweets.json'
-        data = pd.read_json(unix_path, lines = True)
+        unix_path = os.getcwd() + '/' + filename
+        print(unix_path)
+        data = pd.read_json('/Users/ethangruis/Documents/projects/portfolio/python/' + filename, lines = True)
         print("Loaded stock tweet dataframe")
 
     df_sent = getSentiment(data)
     df_pivot = makePivot(df_sent)
-    sentiment_pivot['ticker'] = stock_tweet
+    df_pivot['ticker'] = stock_tweet
     stock_df= getStockTicker(stock)
-    stock_merged = tickerSentMerge(sentiment_pivot, stock_df)
+    stock_merged = tickerSentMerge(df_pivot, stock_df)
     # if(stock_merged == 'ERROR: Majority Nulls in trading days, breaking function...'):
     #     print(stock_merged)
     #     return
     print('done!')
     return(stock_merged)
-        # do unix stuff
 
 def getSentiment(df, verbose = False):
     """Creates sentiment values from dataframe of scraped tweets and aggregates by date into a pivot table
@@ -148,6 +147,7 @@ def tickerSentMerge(df, stock_df):
     print('Merging stock ticker info with sentiment pivot...')
     stock_df['strDate'] = stock_df['timestamp']
     merged_ticker = df.merge(stock_df[['strDate','open','adjusted_close']], how = 'left', on = 'strDate')
+    merged_ticker['dailyChange'] = merged_ticker['open'] - merged_ticker['adjusted_close']
 
     merged_ticker = handleErrors(stock_df, merged_ticker)
 
