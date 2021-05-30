@@ -45,7 +45,7 @@ def pullStockTweets(stock, since = date.today() - timedelta(days = 8), until = d
     print('Pulling stock data for ticker: ' + stock_tweet)
     print('WARNING: this may take some time dependent on dates provided. Default: 1 week.')
 
-    filename = str(stock) + str(since) + "-" + str(until) + ".json"
+    filename = 'data/' + str(stock) + str(since) + "-" + str(until) + ".json"
     if platform == "win32":
         call = "snscrape --jsonl twitter-search \"" + str(stock_tweet) + " since:" + str(since) + " until:" + str(until) + "\"> " + filename
         # do windows stuff
@@ -58,7 +58,7 @@ def pullStockTweets(stock, since = date.today() - timedelta(days = 8), until = d
         os.system(call)
         unix_path = os.getcwd() + '/' + filename
         print(unix_path)
-        data = pd.read_json('/Users/ethangruis/Documents/projects/portfolio/python/' + filename, lines = True)
+        data = pd.read_json('/Users/ethangruis/Documents/projects/TwitterSentiment/' + filename, lines = True)
         print("Loaded stock tweet dataframe")
 
     df_sent = getSentiment(data)
@@ -70,6 +70,9 @@ def pullStockTweets(stock, since = date.today() - timedelta(days = 8), until = d
     #     print(stock_merged)
     #     return
     print('done!')
+    # TODO: save stock_merged to csv and remove json
+    csv_filename = filename[0:len(filename) - 5] + '.csv'
+    stock_merged.to_csv(csv_filename, index = False)
     return(stock_merged)
 
 def getSentiment(df, verbose = False):
@@ -200,7 +203,7 @@ def scrapeTopPerformers():
         #ind.append(tr.text)
     print('Scrape Complete. Cleaning Data...')
     # make into dataframe
-    df = pd.DataFrame(ind,columns=['ticker', 'last', 'Percent change', 'Dollar change', 'Rating', 'Volumne', 'Mkt Cap', 'P/E', 'EPS', 'Unknown', 'Market'])
+    df = pd.DataFrame(ind,columns=['ticker', 'last', 'Percent change', 'Dollar change', 'Rating', 'Volumne', 'Mkt Cap', 'P/E', 'EPS', 'Num Employees', 'Sector'])
 
     # get rid of newlines and tabs in ticker
     df['ticker'] = df['ticker'].str.replace('[\\t\\n\\r]', ' ', regex=True)
@@ -218,6 +221,7 @@ def scrapeTopPerformers():
     df = df.iloc[1: , :]
     today = date.today()
     filename = 'data/' + str(today) + '_top100volume.csv'
+    df['date'] = today
     print('Cleaning complete. Saving file as ' + filename)
     df.to_csv(filename, index = False)
     return df
