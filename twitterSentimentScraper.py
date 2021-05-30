@@ -1,6 +1,3 @@
-# !pip install git+https://github.com/JustAnotherArchivist/snscrape.git
-#!pip3 install --upgrade git+https://github.com/JustAnotherArchivist/snscrape@master
-
 import pandas as pd
 import re
 import os
@@ -11,6 +8,8 @@ from pandas._libs.tslibs.timestamps import Timestamp
 import snscrape
 import snscrape
 import json
+from bs4 import *
+import requests
 
 ## EXAMPLE CODE: snscrape
 
@@ -179,3 +178,46 @@ def handleErrors(stock_df, merged_ticker):
              if(pd.isnull(merged_ticker.loc[i, 'open'])):
                  merged_ticker.loc[i, 'open'] = merged_ticker.loc[i-1, 'open']
     return(merged_ticker)
+
+def scrapeTopPerformers():
+    print('Attempting to scrape trading view...')
+    site = 'https://www.tradingview.com/markets/stocks-usa/market-movers-active/'
+    request = requests.get(site).text
+    print('Request successful. Scraping....')
+
+    # get html parser
+    soup = BeautifulSoup(request,'html.parser')
+    table = soup.find('table') # grab table
+    table_rows = table.find_all('tr') # grab table rows
+
+    ind = [] # create empty list
+
+    for tr in table_rows: # iterate through rows
+        td = tr.find_all('td') # find each cell in each row
+        row = [tr.text for tr in td] # create text for each cell
+        ind.append(row) # append text
+        #print(row)
+        #ind.append(tr.text)
+    print('Scrape Complete. Cleaning Data...')
+    # make into dataframe
+    df = pd.DataFrame(ind,columns=['ticker', 'last', 'Percent change', 'Dollar change', 'Rating', 'Volumne', 'Mkt Cap', 'P/E', 'EPS', 'Unknown', 'Market'])
+
+    # get rid of newlines and tabs in ticker
+    df['ticker'] = df['ticker'].str.replace('[\\t\\n\\r]', ' ', regex=True)
+
+    # split on spaces created
+    new = df['ticker'].str.split('         ', expand = True)
+
+    # new ticker col
+    df['ticker'] = new[0]
+    # new company col
+    df['company'] = new[1]
+
+    # get rid of excess spaces in ticker
+    df['ticker'] = df['ticker'].str.replace(' ', '')
+    df = df.iloc[1: , :]
+    today = date.today()
+    filename = 'data/' + str(today) + '_top100volume.csv'
+    print('Cleaning complete. Saving file as ' + filename)
+    df.to_csv(filename, index = False)
+    return df
