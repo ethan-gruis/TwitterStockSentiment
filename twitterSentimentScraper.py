@@ -58,7 +58,7 @@ def pullStockTweets(stock, since = date.today() - timedelta(days = 8), until = d
         os.system(call)
         unix_path = os.getcwd() + '/' + filename
         print(unix_path)
-        data = pd.read_json('/Users/ethangruis/Documents/projects/TwitterSentiment/' + filename, lines = True)
+        data = pd.read_json(unix_path, lines = True)
         print("Loaded stock tweet dataframe")
 
     df_sent = getSentiment(data)
@@ -88,14 +88,9 @@ def getSentiment(df, verbose = False):
 
     print('Fetching sentiment from stock tweets...')
     lm = ps.LM()
-    for i in range(0, len(df)):
-        if verbose: # print rows every 500
-            if i % 1000 == 0:
-                print(str(i) + ' / ' + str(len(df)))
-        sentence_token = lm.tokenize(df['renderedContent'][i])
-        score = lm.get_score(sentence_token)
-        df.loc[i, 'Positive'] = score['Positive']
-        df.loc[i, 'Negative'] = score['Negative']
+    df['Sent Tokenized'] = df.apply(lambda row: lm.tokenize(row['renderedContent']), axis = 1)
+    df['Positive'] = df.apply(lambda row1: lm.get_score(row1['Sent Tokenized'])['Positive'], axis = 1)
+    df['Negative'] = df.apply(lambda row2: lm.get_score(row2['Sent Tokenized'])['Negative'], axis = 1)
     return(df)
 
 def makePivot(df):
