@@ -2,20 +2,25 @@
 from twitterSentObj import TwitterScraper, scrapeTopPerformers
 import pandas as pd
 
+
 df = scrapeTopPerformers()
 
-top10 = df.head(10)
+top10 = df.head(100)
+
+top10
+
+aapl = TwitterScraper('NVDA', '2021-06-03', '2021-06-04')
 
 
-
-aapl = TwitterScraper('AAPL', '2021-05-12', '2021-05-13')
 
 apple_pivot = aapl.getPivot()
 apple_pivot
-pullStockTweets('AAPL', '2021-05-16', '2021-05-17')
 
+amc_pivot = TwitterScraper('AMC', '2021-05-01', '2021-06-01')
+
+big_df = pd.DataFrame(columns = {'strDate', 'Negative', 'Positive', 'Overall', 'ticker', 'open', 'adjusted_close', 'dailyChange'})
 for i in top10['ticker']:
-    big_df.append(pullStockTweets(i))
+    big_df.append(TwitterScraper(i).getPivot())
 
 
 filename = "arg.json"

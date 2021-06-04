@@ -22,7 +22,8 @@ class TwitterScraper():
         self.stock = str(stock).upper()
         self.startDate = str(startDate)
         self.endDate = str(endDate)
-        self.fileName = 'data/' + self.stock + self.startDate + "-" + self.endDate + ".json"
+        self.fileName = 'data/json/' + self.stock + self.startDate + "-" + self.endDate + ".json"
+        self.csv = 'data/csv/sent' + self.stock + '-' + self.startDate + "-" + self.endDate + '.csv'
         self.platform = platform
         self.__getStockTicker__()
         self.__fetch__()
@@ -41,6 +42,7 @@ class TwitterScraper():
         self.df = pd.read_json(path, lines = True)
         print('fetched data')
         self.__getSentiment__()
+        self.cleanUp()
 
     def __getSentiment__(self):
         print('Fetching sentiment from stock tweets...')
@@ -83,7 +85,11 @@ class TwitterScraper():
         # merged_ticker = handleErrors(stock_df, merged_ticker)
 
     def getPivot(self):
+        self.pivot.to_csv(self.csv)
         return(self.pivot)
+
+    def cleanUp(self):
+        os.remove(self.fileName)
 
 def scrapeTopPerformers():
     print('Attempting to scrape trading view...')
@@ -123,7 +129,7 @@ def scrapeTopPerformers():
     df['ticker'] = df['ticker'].str.replace(' ', '')
     df = df.iloc[1: , :]
     today = date.today()
-    filename = 'data/' + str(today) + '_top100volume.csv'
+    filename = 'data/csv/topPerformers/' + str(today) + '_top100volume.csv'
     df['date'] = today
     print('Cleaning complete. Saving file as ' + filename)
     df.to_csv(filename, index = False)
