@@ -15,7 +15,26 @@ import config
 
 
 class TwitterScraper():
+    """An object that scrapes tweets, currently stock tickers, based on a given string and date range.
+
+    Scrapes twitter using snscrape backend, combined with alphavantage API for up to date stock info, this is a valuable
+    tool for stock analysis and aggregating social media stock sentiment over time.
+    """
+
     def __init__(self, stock, startDate = date.today() - timedelta(days = 8), endDate = date.today()):
+        """Initializes all facets of the object:
+
+        df: raw twitter data pulled in from twitter.json file
+        pivot:     (pandas DataFrame) pivot table of day by day stock data
+        stockData: (pandas DataFrame) full stock data for date range from alphaVantage
+        stock:     (string) stock name
+        startDate: (string) starting date in YYYY/MM/DD format ex: '2021-02-16'
+        endDate:   (string) ending date in YYYY/MM/DD format
+        fileName:  (string) name of the output json file, predetermined based on stock name
+        csv:       (string) name of output csv file, predetermined based on stock name
+        platform:  (sys) determines whether to build OS call in unix based or windows based CMD
+        """
+
         self.df = pd.DataFrame()
         self.pivot = pd.DataFrame()
         self.stockData = pd.DataFrame()
