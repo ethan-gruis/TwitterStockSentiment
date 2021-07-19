@@ -42,7 +42,7 @@ class TwitterScraper():
         self.startDate = str(startDate)
         self.endDate = str(endDate)
         self.fileName = 'data/json/' + self.stock + self.startDate + "-" + self.endDate + ".json"
-        self.csv = 'data/csv/sent' + self.stock + '-' + self.startDate + "-" + self.endDate + '.csv'
+        self.csv = 'data/csv/sent/' + self.stock + '-' + self.startDate + "-" + self.endDate + '.csv'
         self.platform = platform
         self.__getStockTicker__()
         self.__fetch__()
@@ -127,23 +127,21 @@ def scrapeTopPerformers():
         td = tr.find_all('td') # find each cell in each row
         row = [tr.text for tr in td] # create text for each cell
         ind.append(row) # append text
-        #print(row)
-        #ind.append(tr.text)
+        # print(row)
+        # ind.append(tr.text)
     print('Scrape Complete. Cleaning Data...')
     # make into dataframe
     df = pd.DataFrame(ind,columns=['ticker', 'last', 'Percent change', 'Dollar change', 'Rating', 'Volumne', 'Mkt Cap', 'P/E', 'EPS', 'Num Employees', 'Sector'])
 
     # get rid of newlines and tabs in ticker
     df['ticker'] = df['ticker'].str.replace('[\\t\\n\\r]', ' ', regex=True)
-
-    # split on spaces created
-    new = df['ticker'].str.split('         ', expand = True)
-
-    # new ticker col
-    df['ticker'] = new[0]
-    # new company col
-    df['company'] = new[1]
-
+    df['ticker'] = df['ticker'].str.findall(r'(\w+)')
+    for i in range(0,len(df.index)):
+        if(len(str(df['ticker'].str[0][i])) == 1):
+            df.iloc[i]['ticker'] = df['ticker'].str[1][i]
+        else:
+            df.iloc[i]['ticker'] = df['ticker'].str[0][i]
+    
     # get rid of excess spaces in ticker
     df['ticker'] = df['ticker'].str.replace(' ', '')
     df = df.iloc[1: , :]
