@@ -13,14 +13,34 @@ import requests
 import config
 
 class TwitterScraper():
+    """An object that scrapes tweets, currently stock tickers, based on a given string and date range.
+
+    Scrapes twitter using snscrape backend, combined with alphavantage API for up to date stock info, this is a valuable
+    tool for stock analysis and aggregating social media stock sentiment over time.
+    """
+
     def __init__(self, stock, startDate = date.today() - timedelta(days = 8), endDate = date.today()):
+        """Initializes all facets of the object:
+
+        df: raw twitter data pulled in from twitter.json file
+        pivot:     (pandas DataFrame) pivot table of day by day stock data
+        stockData: (pandas DataFrame) full stock data for date range from alphaVantage
+        stock:     (string) stock name
+        startDate: (string) starting date in YYYY/MM/DD format ex: '2021-02-16'
+        endDate:   (string) ending date in YYYY/MM/DD format
+        fileName:  (string) name of the output json file, predetermined based on stock name
+        csv:       (string) name of output csv file, predetermined based on stock name
+        platform:  (sys) determines whether to build OS call in unix based or windows based CMD
+        """
+
         self.df = pd.DataFrame()
         self.pivot = pd.DataFrame()
         self.stockData = pd.DataFrame()
         self.stock = str(stock).upper()
         self.startDate = str(startDate)
         self.endDate = str(endDate)
-        self.fileName = 'data/' + self.stock + self.startDate + "-" + self.endDate + ".json"
+        self.fileName = 'data/json/' + self.stock + self.startDate + "-" + self.endDate + ".json"
+        self.csv = 'data/csv/sent/' + self.stock + '-' + self.startDate + "-" + self.endDate + '.csv'
         self.platform = platform
         self.__getStockTicker__()
         self.__fetch__()
@@ -39,6 +59,7 @@ class TwitterScraper():
         self.df = pd.read_json(path, lines = True)
         print('fetched data')
         self.__getSentiment__()
+        self.cleanUp()
 
     def __getSentiment__(self):
         print('Fetching sentiment from stock tweets...')
@@ -79,7 +100,11 @@ class TwitterScraper():
         # merged_ticker = handleErrors(stock_df, merged_ticker)
 
     def getPivot(self):
+        self.pivot.to_csv(self.csv)
         return(self.pivot)
+
+    def cleanUp(self):
+        os.remove(self.fileName)
 
 def scrapeTopPerformers():
     print('Attempting to scrape trading view...')
@@ -98,28 +123,26 @@ def scrapeTopPerformers():
         td = tr.find_all('td') # find each cell in each row
         row = [tr.text for tr in td] # create text for each cell
         ind.append(row) # append text
-        #print(row)
-        #ind.append(tr.text)
+        # print(row)
+        # ind.append(tr.text)
     print('Scrape Complete. Cleaning Data...')
     # make into dataframe
     df = pd.DataFrame(ind,columns=['ticker', 'last', 'Percent change', 'Dollar change', 'Rating', 'Volumne', 'Ignore', 'Mkt Cap', 'P/E', 'EPS', 'Num Employees', 'Sector'])
 
     # # get rid of newlines and tabs in ticker
     df['ticker'] = df['ticker'].str.replace('[\\t\\n\\r]', ' ', regex=True)
-
-    # split on spaces created
-    new = df['ticker'].str.split('         ', expand = True)
-
-    # new ticker col
-    df['ticker'] = new[0]
-    # new company col
-    df['company'] = new[1]
-
+    df['ticker'] = df['ticker'].str.findall(r'(\w+)')
+    for i in range(0,len(df.index)):
+        if(len(str(df['ticker'].str[0][i])) == 1):
+            df.iloc[i]['ticker'] = df['ticker'].str[1][i]
+        else:
+            df.iloc[i]['ticker'] = df['ticker'].str[0][i]
+    
     # get rid of excess spaces in ticker
     df['ticker'] = df['ticker'].str.replace(' ', '')
     df = df.iloc[1: , :]
     today = date.today()
-    filename = 'data/' + str(today) + '_top100volume.csv'
+    filename = 'data/csv/topPerformers/' + str(today) + '_top100volume.csv'
     df['date'] = today
     print('Cleaning complete. Saving file as ' + filename)
     df.to_csv(filename, index = False)
