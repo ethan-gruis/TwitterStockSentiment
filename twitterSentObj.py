@@ -12,8 +12,6 @@ from bs4 import *
 import requests
 import config
 
-
-
 class TwitterScraper():
     def __init__(self, stock, startDate = date.today() - timedelta(days = 8), endDate = date.today()):
         self.df = pd.DataFrame()
@@ -63,13 +61,11 @@ class TwitterScraper():
         self.pivot['Overall'] = self.pivot['Positive'] - self.pivot['Negative']
         self.pivot['ticker'] = self.stock
         print('Successfully created pivot table.')
-        print()
-        print('DONE')
         self.__tickerSentMerge__()
 
     def __getStockTicker__(self):
         print('Grabbing stock ticker info...')
-        stock_link = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=" + self.stock + "&apikey=" + config.api_key + "&datatype=csv&outputsize=full"
+        stock_link = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=" + self.stock + "&apikey=" + config.api_key + "&datatype=csv&outputsize=full"
         self.stockData = pd.read_csv(str(stock_link))
         print('Fetched stock ticker data.')
         print()
@@ -77,9 +73,9 @@ class TwitterScraper():
     def __tickerSentMerge__(self):
         print('Merging stock ticker info with sentiment pivot...')
         self.stockData['strDate'] = self.stockData['timestamp']
-        self.pivot = self.pivot.merge(self.stockData[['strDate','open','adjusted_close']], how = 'left', on = 'strDate')
-        self.pivot['dailyChange'] = self.pivot['adjusted_close'] - self.pivot['open']
-
+        self.pivot = self.pivot.merge(self.stockData[['strDate','open','high', 'low', 'close']], how = 'left', on = 'strDate')
+        self.pivot['dailyChange'] = self.pivot['close'] - self.pivot['open']
+        print("Done")
         # merged_ticker = handleErrors(stock_df, merged_ticker)
 
     def getPivot(self):
@@ -106,9 +102,9 @@ def scrapeTopPerformers():
         #ind.append(tr.text)
     print('Scrape Complete. Cleaning Data...')
     # make into dataframe
-    df = pd.DataFrame(ind,columns=['ticker', 'last', 'Percent change', 'Dollar change', 'Rating', 'Volumne', 'Mkt Cap', 'P/E', 'EPS', 'Num Employees', 'Sector'])
+    df = pd.DataFrame(ind,columns=['ticker', 'last', 'Percent change', 'Dollar change', 'Rating', 'Volumne', 'Ignore', 'Mkt Cap', 'P/E', 'EPS', 'Num Employees', 'Sector'])
 
-    # get rid of newlines and tabs in ticker
+    # # get rid of newlines and tabs in ticker
     df['ticker'] = df['ticker'].str.replace('[\\t\\n\\r]', ' ', regex=True)
 
     # split on spaces created
